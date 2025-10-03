@@ -19,3 +19,4 @@ D:\bytta\Documents\repos\PicDown\PicDown\obj\Release\net8.0-windows\refint\PicDo
 D:\bytta\Documents\repos\PicDown\PicDown\obj\Release\net8.0-windows\PicDown.pdb
 D:\bytta\Documents\repos\PicDown\PicDown\obj\Release\net8.0-windows\PicDown.genruntimeconfig.cache
 D:\bytta\Documents\repos\PicDown\PicDown\obj\Release\net8.0-windows\ref\PicDown.dll
+D:\bytta\Documents\repos\PicDown\PicDown\obj\Release\net8.0-windows\PicDown.sourcelink.json

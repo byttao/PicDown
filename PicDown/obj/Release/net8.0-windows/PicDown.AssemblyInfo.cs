@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PicDown")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b00d1ae81f2716280bf8792ef2d18b27deae1880")]
 [assembly: System.Reflection.AssemblyProductAttribute("PicDown")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PicDown")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

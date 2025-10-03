@@ -19,3 +19,4 @@ D:\bytta\Documents\repos\PicDown\PicDown\obj\Debug\net8.0-windows\PicDown.pdb
 D:\bytta\Documents\repos\PicDown\PicDown\obj\Debug\net8.0-windows\PicDown.genruntimeconfig.cache
 D:\bytta\Documents\repos\PicDown\PicDown\obj\Debug\net8.0-windows\ref\PicDown.dll
 D:\bytta\Documents\repos\PicDown\PicDown\obj\Debug\net8.0-windows\PicDown.Properties.Resources.resources
+D:\bytta\Documents\repos\PicDown\PicDown\obj\Debug\net8.0-windows\PicDown.sourcelink.json

@@ -139,9 +139,9 @@ namespace PicDown
             return "UnknownID";
         }
 
-        private List<(string Url, int Index)> ExtractVedioLinksFromDiv(string elementId)
+        private List<(string Url, string Index)> ExtractVedioLinksFromDiv(string elementId)
         {
-            var processedVedioLinks = new List<(string Url, int Index)>();
+            var processedVedioLinks = new List<(string Url, string Index)>();
             var doc = new HtmlDocument();
             doc.LoadHtml(fullHtmlContent);
             // 3. 使用 XPath 定位 video 元素
@@ -158,7 +158,7 @@ namespace PicDown
                 {
                     string processedUrl = AddProtocolIfMissing(srcAttribute.Value);
                     processedUrl = processedUrl.Replace("&amp;", "&");
-                    processedVedioLinks.Add((processedUrl, 1));
+                    processedVedioLinks.Add((processedUrl, "1"));
                     return processedVedioLinks;
                 }
             }
@@ -167,9 +167,94 @@ namespace PicDown
             return processedVedioLinks;
         }
 
-        public List<(string Url, int Index)> ExtractImageLinksFromDiv(string targetDivClassName)
+        public List<(string Url, string Titel)> ExtractSKUImageLinksFromDiv(string targetDivClassName)
         {
-            var processedImageLinks = new List<(string Url, int Index)>();
+            var skuDataList = new List<(string Url, string Titel)>();
+
+            int currentIndex = 1;
+            List<string> suffixesToRemove = new List<string>
+            {
+                "_90x90q30.jpg_.webp",
+                "_q50.jpg_.webp"
+                // 可以根据需要添加更多可能的结尾
+            };
+
+            var doc = new HtmlDocument();
+            doc.LoadHtml(fullHtmlContent);
+
+            var targetDivs = doc.DocumentNode.SelectNodes($"//div[contains(@class, '{targetDivClassName}')]");
+
+            if (targetDivs == null || !targetDivs.Any())
+            {
+                LogMessage($"未找到 class 为 '{targetDivClassName}' 的 div 元素。", LogLevel.Error);
+
+                return skuDataList;
+            }
+
+            // 定位所有包含sku选项的div
+            var skuItemDivs = targetDivs[0].SelectNodes("//div[contains(@class, 'skuItem--Z2AJB9Ew')]");
+
+            if (skuItemDivs == null)
+            {
+                LogMessage($"未找到 class 为 '{"skuItem--Z2AJB9Ew"}' 的 div 元素。", LogLevel.Error);
+                return skuDataList; // 没有找到sku项
+            }
+
+            foreach (var skuItemDiv in skuItemDivs)
+            {
+                // 提取"颜色分类"（或者其他属性名）的span的title
+                var attributeNameNode = skuItemDiv.SelectSingleNode(".//div[contains(@class, 'ItemLabel--psS1SOyC')]/span");
+                string attributeName = attributeNameNode?.Attributes["title"]?.Value;
+
+                // 定位所有sku的valueItem div
+                var valueItemDivs = skuItemDiv.SelectNodes(".//div[contains(@class, 'valueItem--smR4pNt4')]");
+
+                if (valueItemDivs != null)
+                {
+                    foreach (var valueItemDiv in valueItemDivs)
+                    {
+                        string ImageUrl = "";
+                        string Title = "";
+
+                        // 提取图片链接
+                        var imgNode = valueItemDiv.SelectSingleNode(".//img");
+                        if (imgNode != null && imgNode.Attributes["src"] != null)
+                        {
+                            ImageUrl = imgNode.Attributes["src"].Value;
+                        }
+
+                        // 提取span的title (SKU值)
+                        var spanNode = valueItemDiv.SelectSingleNode(".//span");
+                        if (spanNode != null && spanNode.Attributes["title"] != null)
+                        {
+                            Title = spanNode.Attributes["title"].Value;
+                        }
+
+                        if (!string.IsNullOrEmpty(ImageUrl))
+                        {
+                            // 使用 LINQ 查找所有后缀的 LastIndexOf，并选择最大的那个索引
+                            int bestMatchIndex = suffixesToRemove
+                                .Select(suffix => ImageUrl.LastIndexOf(suffix)) // 获取每个后缀的 LastIndexOf 结果
+                                .Where(index => index != -1) // 过滤掉未找到的 (-1)
+                                .DefaultIfEmpty(-1) // 如果没有找到任何后缀，则默认为 -1
+                                .Max(); // 找到最大的索引
+
+                            ImageUrl = bestMatchIndex != -1
+                                ? ImageUrl.Substring(0, bestMatchIndex)
+                                : ImageUrl; // 如果 bestMatchIndex 是 -1，说明没有匹配到，url 不变
+
+                            skuDataList.Add((ImageUrl, Title));
+                        }
+                    }
+                }
+            }
+
+            return skuDataList;
+        }
+
+        public List<(string Url, string Index)> ExtractImageLinksFromDiv(string targetDivClassName)
+        {
+            var processedImageLinks = new List<(string Url, string Index)>();
             int currentIndex = 1;
             List<string> suffixesToRemove = new List<string>
             {
@@ -217,7 +302,7 @@ namespace PicDown
                                 ? processedUrl.Substring(0, bestMatchIndex)
                                 : processedUrl; // 如果 bestMatchIndex 是 -1，说明没有匹配到，url 不变
 
-                            processedImageLinks.Add((processedUrl, currentIndex++));
+                            processedImageLinks.Add((processedUrl, (currentIndex++).ToString("D2")));
                         }
                     }
                 }
@@ -247,18 +332,19 @@ namespace PicDown
             return null;
         }
 
-        public async Task DownloadVedioParallelAsync(List<(string Url, int Index)> InfoList)
+        public async Task DownloadVedioParallelAsync(List<(string Url, string Index)> InfoList)
         {
             if (InfoList.Any())
             {
-                string categoryPath = Path.Combine(downloadDirectory, "视频");
-                if (!Directory.Exists(categoryPath))
-                {
-                    Directory.CreateDirectory(categoryPath);
-                }
+                //string categoryPath = Path.Combine(downloadDirectory, "视频");
+                //if (!Directory.Exists(categoryPath))
+                //{
+                //    Directory.CreateDirectory(categoryPath);
+                //}
+                string category = "视频";
 
                 LogMessage($"准备下载 视频 共计 {InfoList.Count} 个视频...", LogLevel.Processing);
-                var task = InfoList.Select(info => DownloadImageAsync(info.Url, info.Index, categoryPath, true));
+                var task = InfoList.Select(info => DownloadImageAsync(info.Url, info.Index, category,1, true));
                 await Task.WhenAll(task);
                 LogMessage("所有视频下载完成", LogLevel.Success);
             }
@@ -268,19 +354,19 @@ namespace PicDown
             }
         }
 
-        public async Task DownloadImagesParallelAsync(List<(string Url, int Index)> imageInfoList, string category)
+        public async Task DownloadImagesParallelAsync(List<(string Url, string Index)> imageInfoList, string category)
         {
             if (imageInfoList.Any())
             {
-                string categoryPath = Path.Combine(downloadDirectory, category);
-                if (!Directory.Exists(categoryPath))
-                {
-                    Directory.CreateDirectory(categoryPath);
-                }
+                //string categoryPath = Path.Combine(downloadDirectory, category);
+                //if (!Directory.Exists(categoryPath))
+                //{
+                //    Directory.CreateDirectory(categoryPath);
+                //}
 
                 LogMessage($"准备下载 {category} 共计 {imageInfoList.Count} 张图片...", LogLevel.Processing);
 
-                var task = imageInfoList.Select(imageInfo => DownloadImageAsync(imageInfo.Url, imageInfo.Index, categoryPath, false));
+                var task = imageInfoList.Select((imageInfo,I) => DownloadImageAsync(imageInfo.Url, imageInfo.Index, category,I, false));
                 await Task.WhenAll(task);
 
                 LogMessage("所有图片下载完成", LogLevel.Success);
@@ -303,7 +389,7 @@ namespace PicDown
             }
         }
 
-        private async Task DownloadImageAsync(string imageUrl, int index, string downPath, bool isvedio)
+        private async Task DownloadImageAsync(string imageUrl, string title, string category,int index, bool isvedio)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -359,9 +445,17 @@ namespace PicDown
                     {
                         extension = ".mp4";
                     }
+                    string fileName;
+                    if (category == "SKU图")
+                    {
+                        fileName = $"{category}_{index:D2}_{title}{extension}";
+                    }
+                    else
+                    {
+                        fileName = $"{category}_{title}{extension}";
+                    }
 
-                    var fileName = $"{index:D2}{extension}";
-                    var filePath = Path.Combine(downPath, fileName);
+                    var filePath = Path.Combine(downloadDirectory, fileName);
 
                     using (var stream = await response.Content.ReadAsStreamAsync())
                         using (var fileStream = File.Create(filePath))
@@ -403,19 +497,19 @@ namespace PicDown
 
             // 2. 提取 thumbnails--v976to2t 中的图片链接
             LogMessage("正在提取主图清单", LogLevel.Processing);
-            List<(string Url, int Index)> thumbnailImages = ExtractImageLinksFromDiv("thumbnails--v976to2t");
+            List<(string Url, string Index)> thumbnailImages = ExtractImageLinksFromDiv("thumbnails--v976to2t");
 
             // 3. 提取 descV8-container 中的图片链接
             LogMessage("正在提取详情图清单", LogLevel.Processing);
-            List<(string Url, int Index)> descImages = ExtractImageLinksFromDiv("descV8-container");
+            List<(string Url, string Index)> descImages = ExtractImageLinksFromDiv("descV8-container");
 
             // 4. 提取 content--DIGuLqdf 中的图片链接
             LogMessage("正在提取SKU图清单", LogLevel.Processing);
-            List<(string Url, int Index)> SKUImages = ExtractImageLinksFromDiv("content--DIGuLqdf");
+            List<(string Url, string Index)> SKUImages = ExtractSKUImageLinksFromDiv("content--DIGuLqdf");
 
             // 4. 提取 videox-video-el 中的视频链接
             LogMessage("正在提取视频链接", LogLevel.Processing);
-            List<(string Url, int Index)> Vedios = ExtractVedioLinksFromDiv("videox-video-el");
+            List<(string Url, string Index)> Vedios = ExtractVedioLinksFromDiv("videox-video-el");
 
             // 5. 下载所有图片
             await DownloadImagesParallelAsync(thumbnailImages, "主图");

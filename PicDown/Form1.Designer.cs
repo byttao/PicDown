@@ -166,7 +166,7 @@
             richTextBox1.ReadOnly = true;
             richTextBox1.Size = new Size(94, 522);
             richTextBox1.TabIndex = 5;
-            richTextBox1.Text = "V1.2 250927\n更新：视频下载\n\nV1.1 250927\n更新：SKU图下载\n\nV1.0 250926\n更新：主图、详情图下载";
+            richTextBox1.Text = "V1.3 251003\n更新：取消文件夹嵌套、新增获取SKU名称\n\nV1.2 250927\n更新：视频下载\n\nV1.1 250927\n更新：SKU图下载\n\nV1.0 250926\n更新：主图、详情图下载";
             // 
             // Form1
             // 
@@ -178,7 +178,7 @@
             Controls.Add(tableLayoutPanel1);
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Form1";
-            Text = "图包下载器 V1.2 250927";
+            Text = "图包下载器 V1.3 251003";
             tableLayoutPanel1.ResumeLayout(false);
             tableLayoutPanel2.ResumeLayout(false);
             tableLayoutPanel2.PerformLayout();
